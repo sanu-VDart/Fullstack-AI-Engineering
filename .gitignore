@@ -1,0 +1,30 @@
+# Environment
+.env
+__pycache__/
+*.pyc
+*.pyo
+
+# IDE
+.vscode/
+.idea/
+*.swp
+
+# OS
+.DS_Store
+Thumbs.db
+
+# Python
+*.egg-info/
+dist/
+build/
+venv/
+.venv/
+
+# Uploads (not needed)
+uploads/
+
+# RAG index (rebuilt at runtime)
+index/
+
+# Gemini
+.gemini/
