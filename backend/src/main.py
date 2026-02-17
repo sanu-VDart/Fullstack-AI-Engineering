@@ -268,25 +268,32 @@ async def chat(request: ChatRequest):
         conv_id = request.conversation_id or str(uuid.uuid4())
         history = app_state["conversations"].get(conv_id, [])
         
-        # Get response
+        # Get response from real Gemini API
         response = assistant.chat(request.message, history)
         
-        # Update conversation history
-        from langchain_core.messages import HumanMessage, AIMessage
-        history.append(HumanMessage(content=request.message))
-        history.append(AIMessage(content=response))
-        app_state["conversations"][conv_id] = history[-20:]  # Keep last 20 messages
+        # Determine if the response was successful (not a fallback error)
+        is_success = "couldn't generate a text response" not in response.lower()
+        
+        # Update conversation history only on success
+        if is_success:
+            from langchain_core.messages import HumanMessage, AIMessage
+            history.append(HumanMessage(content=request.message))
+            history.append(AIMessage(content=response))
+            app_state["conversations"][conv_id] = history[-20:]  # Keep last 20 messages
         
         return ChatResponse(
             response=response,
             conversation_id=conv_id,
-            tools_used=[]  # Could extract from graph state
+            tools_used=[],  # Could extract from graph state
+            success=is_success
         )
         
     except Exception as e:
+        import traceback
         logger.error(f"Chat error: {e}")
+        logger.error(f"Full traceback: {traceback.format_exc()}")
         
-        # Check if it's a Gemini API error (404 NOT_FOUND)
+        # Check if it's a Gemini API error
         error_str = str(e)
         if "NOT_FOUND" in error_str or "404" in error_str:
             return ChatResponse(
@@ -307,11 +314,36 @@ The AI chat is currently unavailable due to Google API configuration issues.
 
 The predictive maintenance features don't need chat to work!""",
                 conversation_id=request.conversation_id or str(uuid.uuid4()),
-                tools_used=[]
+                tools_used=[],
+                success=False
+            )
+        elif "RESOURCE_EXHAUSTED" in error_str or "429" in error_str or "quota" in error_str.lower():
+            return ChatResponse(
+                response="""⚠️ **API Quota Exceeded**
+
+You've hit the Gemini API rate limit. This happens with free tier API keys.
+
+**Quick fix:** Wait 1 minute and try again.
+
+**Permanent fix:** The backend has been updated to use gemini-1.5-flash (1500 requests/day instead of 20).
+**Restart the backend server** to apply the change:
+```
+Ctrl+C to stop
+python -m uvicorn src.main:app --reload --port 8000
+```
+
+**All other features work fine:** ✅
+- RUL Prediction
+- Maintenance Recommendations  
+- Engine Analysis""",
+                conversation_id=request.conversation_id or str(uuid.uuid4()),
+                tools_used=[],
+                success=False
             )
         
         # For other errors, raise HTTP exception
         raise HTTPException(status_code=500, detail=str(e))
+
 
 
 

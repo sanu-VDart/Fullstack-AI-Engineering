@@ -16,8 +16,11 @@ from .tools import AVAILABLE_TOOLS, initialize_tools
 from .prompts import GENERAL_ASSISTANT_PROMPT
 
 
-def create_llm(model: str = "models/gemini-2.5-flash", temperature: float = 0.1):
+def create_llm(model: str = None, temperature: float = 0.1):
     """Create the LLM instance."""
+    if model is None:
+        model = os.getenv("LLM_MODEL", "gemini-flash-latest")
+    
     return ChatGoogleGenerativeAI(
         model=model,
         temperature=temperature,
@@ -38,11 +41,14 @@ class PredictiveMaintenanceAssistant:
         model_dir: str = "./models",
         data_path: str = "./CMAPSSData",
         dataset_id: str = "FD001",
-        llm_model: str = "models/gemini-2.5-flash"
+        llm_model: str = None
     ):
         self.model_dir = model_dir
         self.data_path = data_path
         self.dataset_id = dataset_id
+
+        if llm_model is None:
+            llm_model = os.getenv("LLM_MODEL", "gemini-flash-latest")
 
         # Initialize tools with models
         initialize_tools(model_dir, data_path, dataset_id)
@@ -107,8 +113,13 @@ class PredictiveMaintenanceAssistant:
 
     def _extract_text(self, message) -> str:
         """Extract text content from an AI message."""
-        if hasattr(message, 'content'):
-            content = message.content
+        # For debugging purposes
+        import logging
+        logger = logging.getLogger(__name__)
+        
+        content = getattr(message, 'content', None)
+        
+        if content:
             if isinstance(content, list):
                 text_parts = []
                 for part in content:
@@ -116,13 +127,35 @@ class PredictiveMaintenanceAssistant:
                         text_parts.append(part['text'])
                     elif isinstance(part, str):
                         text_parts.append(part)
-                return "".join(text_parts) or "I processed your request but couldn't generate a text response."
-            return content if content else "I processed your request but couldn't generate a text response."
-        return str(message)
+                
+                result = "".join(text_parts).strip()
+                if result:
+                    return result
+                
+                logger.warning(f"Empty text in content list: {content}")
+                return "I processed your request but couldn't generate a text response (Empty content list)."
+            
+            if isinstance(content, str):
+                result = content.strip()
+                if result:
+                    return result
+            
+            logger.warning(f"Unexpected content type or empty content: {type(content)} - {content}")
+            return f"I processed your request but couldn't generate a text response (Type: {type(content)})."
+            
+        # Check if there are tool calls but no content
+        if hasattr(message, 'tool_calls') and message.tool_calls:
+            logger.info("Found tool calls but no immediate text content.")
+            return "I'm processing your request using tools..."
+
+        logger.error(f"Message has no content attribute or it is None: {message}")
+        return "I processed your request but couldn't generate a text response (No content)."
 
 
-def create_simple_chain(llm_model: str = "models/gemini-2.5-flash"):
+def create_simple_chain(llm_model: str = None):
     """Create a simple chain without tools for basic queries."""
+    if llm_model is None:
+        llm_model = os.getenv("LLM_MODEL", "gemini-flash-latest")
     llm = create_llm(llm_model)
     prompt = ChatPromptTemplate.from_messages([
         ("system", GENERAL_ASSISTANT_PROMPT),

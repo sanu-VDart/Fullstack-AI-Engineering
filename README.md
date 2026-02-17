@@ -1,98 +1,58 @@
-# 🔧 Predictive Maintenance Assistant — Backend
+# 🔧 Mechanical AI Assistant - Turbofan Predictive Maintenance
 
-AI-powered predictive maintenance system for turbofan engines using **LangChain**, **LangGraph**, and **Google Gemini**.
+This project is divided into two main components: a **FastAPI Backend** and a **Next.js Frontend**.
 
-## 🚀 Features
+## 🏗️ Project Structure
 
-- **RUL Prediction** — Predicts Remaining Useful Life using Random Forest
-- **State Classification** — Classifies engine state (Normal/Degrading/Critical)
-- **AI Chat** — Natural language interface powered by Gemini + LangGraph
-- **Maintenance Recommendations** — Automated maintenance scheduling
-- **REST API** — FastAPI with full OpenAPI documentation
+- `backend/`: Python FastAPI application, ML models, and dataset.
+- `frontend/`: Next.js web interface for interaction and visualization.
+- `ARCHITECTURE.md`: Detailed system architecture and data flow.
 
-## 📦 Tech Stack
+---
 
-| Component | Technology |
-|-----------|-----------|
-| API Framework | FastAPI |
-| AI Orchestration | LangChain + LangGraph |
-| LLM | Google Gemini 2.5 Flash |
-| ML Models | scikit-learn (Random Forest) |
-| ML Lifecycle | MLFlow |
-| Dataset | NASA C-MAPSS (FD001) |
+## 🚀 Getting Started
 
-## 🛠️ Setup
-
-### Prerequisites
-- Python 3.11+
-- Google Gemini API key ([Get one here](https://aistudio.google.com/app/apikey))
-
-### Install & Run
+### 1. Backend Setup (FastAPI)
 
 ```bash
-# Clone the repo
-git clone https://github.com/YOUR_USERNAME/MechanicalAI-backend.git
-cd MechanicalAI-backend
+cd backend
 
 # Install dependencies
 pip install -r requirements.txt
 
-# Set up environment
-cp .env.example .env
+# Set up environment variables
 # Edit .env and add your GOOGLE_API_KEY
+# (Already moved from root)
 
-# Train models (first time only)
-python -m src.train_models
-
-# Start the server
-uvicorn src.main:app --reload --port 8000
+# Start the backend server
+python -m uvicorn src.main:app --reload --port 8000
 ```
+API Documentation: [http://localhost:8000/docs](http://localhost:8000/docs)
 
-### API Docs
-Once running, visit: `http://localhost:8000/docs`
-
-## 📡 API Endpoints
-
-| Method | Endpoint | Description |
-|--------|----------|-------------|
-| GET | `/health` | Health check |
-| GET | `/engines` | List available engines |
-| POST | `/predict` | Predict RUL for an engine |
-| POST | `/chat` | Chat with the AI assistant |
-| POST | `/maintenance` | Get maintenance recommendations |
-
-## 🚢 Deployment (Render)
-
-1. Push this repo to GitHub
-2. Go to [render.com](https://render.com) → New Web Service
-3. Connect your GitHub repo
-4. Set environment variable: `GOOGLE_API_KEY`
-5. Deploy!
-
-## 📊 MLFlow Tracking
+### 2. Frontend Setup (Next.js)
 
 ```bash
-# Run training with MLFlow tracking
-python -m src.train_models
+cd frontend
 
-# View MLFlow UI
-mlflow ui --port 5000
+# Install dependencies
+npm install
+
+# Start the development server
+npm run dev
+```
+Web Interface: [http://localhost:3000](http://localhost:3000)
+
+---
+
+## 🛠️ Combined Startup (Windows)
+
+If you are on Windows, you can use the provided script to start both services:
+
+```powershell
+./run_app.bat
 ```
 
-## 🏗️ Architecture
-
-```
-Client → FastAPI → LangGraph Agent → Gemini 2.5 Flash
-                          ↓
-                    Tool Execution
-                   ┌──────┼──────┐
-              Analyze   Predict  Maintain
-              Sensors    RUL    Recommend
-                   └──────┼──────┘
-                     ML Models
-                   (scikit-learn)
-```
-
-## 📜 License
-
-MIT
+## 📊 Documentation
+For more details, see:
+- [Architecture Details](ARCHITECTURE.md)
+- [API Repair Guide](URGENT_API_KEY_FIX.md)

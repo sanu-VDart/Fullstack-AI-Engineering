@@ -5,20 +5,13 @@
 ```mermaid
 graph TB
     subgraph "Frontend - Vercel"
-        UI["⚛️ Next.js Dashboard"]
-        API_CLIENT["API Client"]
+        UI["⚛️ Next.js Dashboard<br/>AERO-SENSE Diagnostics"]
     end
     
     subgraph "Backend - Render"
-        FASTAPI["🚀 FastAPI Server"]
+        API["🚀 FastAPI Server"]
         AGENT["🤖 LangGraph Agent"]
         LLM["💬 Gemini 2.5 Flash"]
-        
-        subgraph "ML Models"
-            RUL["📊 RUL Predictor<br/>Random Forest"]
-            STATE["🔧 State Classifier<br/>Random Forest"]
-            PREPROCESSOR["⚙️ Data Preprocessor<br/>StandardScaler"]
-        end
         
         subgraph "Tools"
             T1["analyze_sensor_data"]
@@ -26,87 +19,114 @@ graph TB
             T3["get_maintenance_recommendation"]
             T4["list_available_engines"]
         end
+        
+        subgraph "ML Models"
+            RUL["📊 RUL Predictor<br/>Random Forest"]
+            STATE["🔧 State Classifier<br/>Random Forest"]
+            PREP["⚙️ StandardScaler"]
+        end
     end
     
-    subgraph "Data"
-        CMAPSS["📁 NASA C-MAPSS<br/>FD001 Dataset"]
-    end
-    
-    subgraph "MLOps"
+    subgraph "Data & MLOps"
+        DATA["📁 NASA C-MAPSS<br/>FD001 Dataset"]
         MLFLOW["📈 MLFlow<br/>Experiment Tracking"]
     end
     
-    UI --> API_CLIENT
-    API_CLIENT -->|"REST API"| FASTAPI
-    FASTAPI --> AGENT
-    AGENT -->|"Tool Calls"| T1 & T2 & T3 & T4
-    AGENT -->|"LLM Calls"| LLM
-    T1 & T2 & T3 --> RUL & STATE & PREPROCESSOR
-    RUL & STATE & PREPROCESSOR --> CMAPSS
-    MLFLOW -.->|"Tracks"| RUL & STATE
+    UI -->|REST API| API
+    API --> AGENT
+    AGENT -->|Tool Calls| T1 & T2 & T3 & T4
+    AGENT <-->|LLM Calls| LLM
+    T1 & T2 & T3 --> RUL & STATE & PREP
+    RUL & STATE & PREP --> DATA
+    MLFLOW -.->|Tracks| RUL & STATE
+    
+    style UI fill:#1e293b,stroke:#00f3ff,stroke-width:2px
+    style API fill:#1e293b,stroke:#00f3ff,stroke-width:2px
+    style AGENT fill:#1e293b,stroke:#00f3ff,stroke-width:2px
+    style LLM fill:#1e293b,stroke:#a855f7,stroke-width:2px
 ```
 
-## Data Flow
+## Request Flow
 
 ```mermaid
 sequenceDiagram
-    participant U as User
-    participant FE as Frontend (Vercel)
-    participant BE as Backend (Render)
-    participant AG as LangGraph Agent
-    participant GM as Gemini 2.5 Flash
-    participant ML as ML Models
-    
-    U->>FE: Select Engine + Predict
-    FE->>BE: POST /predict {unit_id}
-    BE->>ML: Load sensor data + predict
-    ML-->>BE: RUL, State, Probabilities
-    BE-->>FE: Prediction Response
-    FE-->>U: Display Diagnostic Report
-    
-    U->>FE: Chat Query
-    FE->>BE: POST /chat {message}
-    BE->>AG: Process with LangGraph
-    AG->>GM: LLM with tools
-    GM-->>AG: Tool call request
-    AG->>ML: Execute tool
-    ML-->>AG: Tool result
-    AG->>GM: Results + generate response
-    GM-->>AG: Final answer
-    AG-->>BE: Response text
-    BE-->>FE: Chat Response
-    FE-->>U: Display AI Answer
-```
+    participant User
+    participant Frontend as Next.js<br/>(Vercel)
+    participant Backend as FastAPI<br/>(Render)
+    participant Agent as LangGraph<br/>Agent
+    participant Gemini as Gemini 2.5<br/>Flash
+    participant Models as ML Models
 
-## API Endpoints
+    Note over User,Models: Prediction Flow
+    User->>Frontend: Select Engine + Predict
+    Frontend->>Backend: POST /predict {unit_id}
+    Backend->>Models: Load data + predict
+    Models-->>Backend: RUL + State + Probabilities
+    Backend-->>Frontend: JSON Response
+    Frontend-->>User: Display Diagnostic Report
 
-```mermaid
-graph LR
-    subgraph "REST API"
-        GET_HEALTH["GET /health"]
-        GET_ENGINES["GET /engines"]
-        POST_PREDICT["POST /predict"]
-        POST_CHAT["POST /chat"]
-        POST_MAINTAIN["POST /maintenance"]
-    end
+    Note over User,Models: Chat Flow
+    User->>Frontend: Ask Question
+    Frontend->>Backend: POST /chat {message}
+    Backend->>Agent: Process with LangGraph
+    Agent->>Gemini: LLM call with tools
+    Gemini-->>Agent: Tool call request
+    Agent->>Models: Execute tool
+    Models-->>Agent: Tool results
+    Agent->>Gemini: Feed results back
+    Gemini-->>Agent: Generate response
+    Agent-->>Backend: Final answer
+    Backend-->>Frontend: JSON Response
+    Frontend-->>User: Display AI Answer
 ```
 
 ## Deployment Architecture
 
 ```mermaid
 graph LR
-    subgraph "GitHub"
-        REPO_BE["Backend Repo"]
-        REPO_FE["Frontend Repo"]
+    subgraph "Development"
+        DEV_BE["Backend Code"]
+        DEV_FE["Frontend Code"]
     end
     
-    subgraph "CI/CD"
-        REPO_BE -->|"Push to deploy"| RENDER["Render"]
-        REPO_FE -->|"Push to deploy"| VERCEL["Vercel"]
+    subgraph "GitHub"
+        REPO_BE["MechanicalAI-backend"]
+        REPO_FE["MechanicalAI-frontend"]
     end
     
     subgraph "Production"
-        VERCEL -->|"NEXT_PUBLIC_API_URL"| RENDER
-        RENDER -->|"GOOGLE_API_KEY"| GEMINI["Google Gemini API"]
+        RENDER["Render<br/>FastAPI + ML Models"]
+        VERCEL["Vercel<br/>Next.js UI"]
+        GEMINI["Google Gemini API"]
     end
+    
+    DEV_BE -->|git push| REPO_BE
+    DEV_FE -->|git push| REPO_FE
+    REPO_BE -->|Auto Deploy| RENDER
+    REPO_FE -->|Auto Deploy| VERCEL
+    VERCEL -->|API Calls| RENDER
+    RENDER -->|LLM Calls| GEMINI
+    
+    style RENDER fill:#0f172a,stroke:#00f3ff,stroke-width:3px
+    style VERCEL fill:#0f172a,stroke:#00f3ff,stroke-width:3px
+    style GEMINI fill:#0f172a,stroke:#a855f7,stroke-width:3px
 ```
+
+## Technology Stack
+
+| Layer | Technology | Purpose |
+|-------|-----------|---------|
+| **Frontend** | Next.js | Cyberpunk UI dashboard |
+| **API** | FastAPI | REST endpoints |
+| **AI Orchestration** | LangGraph | Agent workflow |
+| **LLM** | Gemini 2.5 Flash | Natural language + tool calling |
+| **ML Models** | scikit-learn | RUL prediction + state classification |
+| **MLOps** | MLFlow | Experiment tracking |
+| **Data** | NASA C-MAPSS | Turbofan degradation dataset |
+| **Deployment** | Render + Vercel | Backend + Frontend hosting |
+
+---
+
+**Note:** These Mermaid diagrams will render as visual flowcharts when viewed on GitHub.
+
+

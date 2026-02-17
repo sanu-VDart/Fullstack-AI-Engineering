@@ -102,6 +102,7 @@ class ChatResponse(BaseModel):
     response: str = Field(..., description="Assistant's response")
     conversation_id: str = Field(..., description="Conversation ID for follow-up")
     tools_used: List[str] = Field(default=[], description="Tools invoked during response")
+    success: bool = Field(default=True, description="Whether the response was successfully generated")
     
     class Config:
         json_schema_extra = {
