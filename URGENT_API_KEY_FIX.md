@@ -29,15 +29,9 @@ GOOGLE_API_KEY="YOUR_NEW_KEY_HERE"
 python -m uvicorn src.main:app --reload --port 8000
 ```
 
-## For Your Manager Demo RIGHT NOW
+## Feature Status
 
-**Good news:** All prediction features work WITHOUT chat:
-1. ✅ Select engine from dropdown
-2. ✅ Click "PREDICT RUL" → Shows predictions
-3. ✅ View maintenance recommendations
-4. ✅ Analyze engine health
-
-**Chat will work** once you get the new API key (takes 2 minutes).
+**Note:** All prediction and analysis features work independently of the chat interface. You can Select engines, Predict RUL, and Analyze sensors even if the Gemini API key is not yet configured.
 
 ## Why This Happened
 The API key you're using either:
