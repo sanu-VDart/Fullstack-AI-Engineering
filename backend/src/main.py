@@ -16,6 +16,8 @@ from contextlib import asynccontextmanager
 
 from fastapi import FastAPI, HTTPException, Depends
 from fastapi.middleware.cors import CORSMiddleware
+from fastapi.staticfiles import StaticFiles
+from fastapi.responses import FileResponse
 from dotenv import load_dotenv
 
 from .schemas import (
@@ -105,7 +107,7 @@ app.add_middleware(
 
 # ============== Health & Info Endpoints ==============
 
-@app.get("/", tags=["Info"])
+@app.get("/api")
 async def root():
     """API root - returns basic info."""
     return {
@@ -114,6 +116,31 @@ async def root():
         "status": "running",
         "models_loaded": app_state["models_loaded"]
     }
+
+
+# ============== Static File Serving ==============
+
+# Path to the compiled frontend
+static_dir = os.path.join(os.path.dirname(os.path.dirname(__file__)), "static")
+
+# Serve the static files (Must be after API routes to avoid overlap)
+if os.path.exists(static_dir):
+    app.mount("/static", StaticFiles(directory=static_dir), name="static")
+    
+    # Root route to serve index.html
+    @app.get("/", tags=["UI"])
+    async def serve_frontend():
+        return FileResponse(os.path.join(static_dir, "index.html"))
+    
+    # Catch-all route for Next.js routing (optional but good for SPA)
+    @app.get("/{full_path:path}", tags=["UI"])
+    async def entrypoint(full_path: str):
+        # Check if requested path exists as a file
+        file_path = os.path.join(static_dir, full_path)
+        if os.path.isfile(file_path):
+            return FileResponse(file_path)
+        # Otherwise serve index.html for client-side routing
+        return FileResponse(os.path.join(static_dir, "index.html"))
 
 
 @app.get("/health", response_model=HealthResponse, tags=["Health"])

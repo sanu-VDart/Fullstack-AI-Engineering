@@ -10,9 +10,11 @@ This project is divided into two main components: a **FastAPI Backend** and a **
 
 ---
 
-## 🚀 Getting Started
+# 🚀 Getting Started
 
-### 1. Backend Setup (FastAPI)
+Since the backend now serves the frontend automatically, you only need to start one service!
+
+### 1. Simple Startup (Recommended)
 
 ```bash
 cd backend
@@ -20,27 +22,27 @@ cd backend
 # Install dependencies
 pip install -r requirements.txt
 
-# Set up environment variables
-# Edit .env and add your GOOGLE_API_KEY
-# (Already moved from root)
-
-# Start the backend server
+# Start the combined server
 python -m uvicorn src.main:app --reload --port 8000
 ```
-API Documentation: [http://localhost:8000/docs](http://localhost:8000/docs)
+- **Web Interface**: [http://localhost:8000](http://localhost:8000)
+- **API Docs**: [http://localhost:8000/docs](http://localhost:8000/docs)
 
-### 2. Frontend Setup (Next.js)
+---
+
+### 2. Development Mode
+If you want to edit the frontend code and see changes live:
 
 ```bash
+# Terminal 1: Backend
+cd backend
+python -m uvicorn src.main:app --reload --port 8000
+
+# Terminal 2: Frontend
 cd frontend
-
-# Install dependencies
-npm install
-
-# Start the development server
 npm run dev
 ```
-Web Interface: [http://localhost:3000](http://localhost:3000)
+(Frontend Dev Server: [http://localhost:3000](http://localhost:3000))
 
 ---
 
