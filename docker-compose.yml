@@ -1,12 +1,12 @@
 version: '3.8'
 
 services:
-  mechanical-assistant:
+  backend:
     build:
       context: ./backend
       dockerfile: Dockerfile
-    image: mechanical-assistant:latest
-    container_name: mechanical-assistant-app
+    image: mechanical-backend:latest
+    container_name: mechanical-backend-app
     ports:
       - "8000:8000"
     env_file:
@@ -15,4 +15,16 @@ services:
       - ./backend/models:/app/models
       - ./backend/index:/app/index
       - ./backend/CMAPSSData:/app/CMAPSSData
+    restart: always
+
+  frontend:
+    build:
+      context: ./frontend
+      dockerfile: Dockerfile
+    image: mechanical-frontend:latest
+    container_name: mechanical-frontend-app
+    ports:
+      - "3000:3000"
+    depends_on:
+      - backend
     restart: always
